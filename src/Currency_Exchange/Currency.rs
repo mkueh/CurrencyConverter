@@ -10,7 +10,7 @@ pub struct Currency_History_Entry {
     CURRENCY_DENOM: String,
     #[serde(with = "my_date_format")]
     TIME_PERIOD: NaiveDate,
-    OBS_VALUE: f64,
+    OBS_VALUE: Option<f64>,
 }
 
 mod my_date_format {
@@ -26,7 +26,7 @@ mod my_date_format {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Currency_History {
     exchange_entry : Vec<Currency_History_Entry>,
     base_CURRENCY: String,
@@ -48,13 +48,7 @@ impl Currency_History {
     }
 
     pub fn init(&mut self, ezb_response:String){
-        let mut rdr = csv::Reader::from_reader(ezb_response.as_bytes());
-        let mut deserial_result = rdr.deserialize();
 
-        for (i,result) in deserial_result.enumerate() {
-            let record:Currency_History_Entry = result.unwrap();
-            self.exchange_entry.push(record);
-        }
 
         self.base_CURRENCY = self.exchange_entry[0].CURRENCY.clone();
         self.target_CURRENCY = self.exchange_entry[0].CURRENCY_DENOM.clone();

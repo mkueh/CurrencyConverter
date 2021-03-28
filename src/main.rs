@@ -14,7 +14,7 @@ fn main() {
 
     //test();
     //let return_value = hello_world(); // Nothing is printed
-    let mut Exchanger = Currency_Exchange::Exchange::new(Currency_CODE::USD);
+    let mut Exchanger = Currency_Exchange::Exchange::new(Currency_Exchange::Currency_CODE::USD);
     Exchanger.init();
 
     //println!("return value= {:#?}", return_value)

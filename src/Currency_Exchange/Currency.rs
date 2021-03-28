@@ -6,11 +6,12 @@ use crate::Currency_Exchange::Currency;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Currency_History_Entry {
-    CURRENCY: String,
-    CURRENCY_DENOM: String,
+    pub CURRENCY: String,
+    #[serde(rename = "CURRENCY_DENOM")]
+    pub CURRENCY_TARGET: String,
     #[serde(with = "my_date_format")]
-    TIME_PERIOD: NaiveDate,
-    OBS_VALUE: Option<f64>,
+    pub TIME_PERIOD: NaiveDate,
+    pub OBS_VALUE: Option<f64>,
 }
 
 mod my_date_format {
@@ -28,17 +29,17 @@ mod my_date_format {
 
 #[derive(Clone, Debug)]
 pub struct Currency_History {
-    exchange_entry : Vec<Currency_History_Entry>,
-    base_CURRENCY: String,
-    target_CURRENCY: String,
-    first_date: Option<NaiveDate>,
-    end_date: Option<NaiveDate>,
+    pub exchange_entrys : Vec<Currency_History_Entry>,
+    pub base_CURRENCY: String,
+    pub target_CURRENCY: String,
+    pub first_date: Option<NaiveDate>,
+    pub end_date: Option<NaiveDate>,
 }
 
 impl Currency_History {
     pub fn new() -> Currency_History {
         let mut ret = Currency_History{
-            exchange_entry: Vec::new(),
+            exchange_entrys: Vec::new(),
             base_CURRENCY: "".to_string(),
             target_CURRENCY: "".to_string(),
             first_date: None,
@@ -48,12 +49,10 @@ impl Currency_History {
     }
 
     pub fn init(&mut self, ezb_response:String){
-
-
-        self.base_CURRENCY = self.exchange_entry[0].CURRENCY.clone();
-        self.target_CURRENCY = self.exchange_entry[0].CURRENCY_DENOM.clone();
-        self.first_date = Option::from(self.exchange_entry[0].TIME_PERIOD.clone());
-        self.end_date = Option::from(self.exchange_entry[self.exchange_entry.len() - 1].TIME_PERIOD.clone());
+        self.base_CURRENCY = self.exchange_entrys[0].CURRENCY.clone();
+        self.target_CURRENCY = self.exchange_entrys[0].CURRENCY_TARGET.clone();
+        self.first_date = Option::from(self.exchange_entrys[0].TIME_PERIOD.clone());
+        self.end_date = Option::from(self.exchange_entrys[self.exchange_entrys.len() - 1].TIME_PERIOD.clone());
 
         }
 }

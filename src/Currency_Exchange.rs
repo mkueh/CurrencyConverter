@@ -48,9 +48,9 @@ impl Exchange {
             tmp_Entry_list.push(record);
         }
 
-        for item in tmp_Entry_list{
-            let target_cur = item.CURRENCY_TARGET;
-            let is_in = self.exchange_Histories.contains_key(&target_cur);
+        for item in tmp_Entry_list.iter_mut(){
+            let target_cur = &item.CURRENCY_TARGET;
+            let is_in = self.exchange_Histories.contains_key(target_cur);
 
             if !is_in{
                 let mut tmp_history = Currency_History::new();
@@ -60,7 +60,7 @@ impl Exchange {
                 let _ = self.exchange_Histories.insert(target_cur.clone(), tmp_history);
 
             }else{
-                let mut tmp_history = &mut self.exchange_Histories.get(&target_cur).unwrap();
+                let mut tmp_history = self.exchange_Histories.get_mut(target_cur).unwrap();
                 tmp_history.exchange_entrys.push(item.clone());
             }
         }

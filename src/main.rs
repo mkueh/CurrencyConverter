@@ -17,5 +17,5 @@ fn main() {
     let mut Exchanger = Currency_Exchange::Exchange::new(Currency_Exchange::Currency_CODE::USD);
     Exchanger.init();
 
-    //println!("return value= {:#?}", return_value)
+    println!("wait");
 }

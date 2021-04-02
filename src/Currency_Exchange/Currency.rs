@@ -28,7 +28,7 @@ mod my_date_format {
 }
 
 #[derive(Clone, Debug)]
-pub struct Currency_History {
+pub struct Exchange_History {
     pub exchange_entrys : Vec<Currency_History_Entry>,
     pub base_CURRENCY: String,
     pub target_CURRENCY: String,
@@ -36,9 +36,9 @@ pub struct Currency_History {
     pub end_date: Option<NaiveDate>,
 }
 
-impl Currency_History {
-    pub fn new() -> Currency_History {
-        let mut ret = Currency_History{
+impl Exchange_History {
+    pub fn new() -> Exchange_History {
+        let mut ret = Exchange_History {
             exchange_entrys: Vec::new(),
             base_CURRENCY: "".to_string(),
             target_CURRENCY: "".to_string(),

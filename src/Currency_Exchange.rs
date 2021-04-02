@@ -1,27 +1,49 @@
-use crate::Currency_Exchange::Currency::Currency_History;
 use std::collections::HashMap;
-use reqwest::Response;
 use std::ops::Index;
+
+use reqwest::Response;
+
+use Currency::Exchange_History;
+use chrono::NaiveDate;
 
 mod Currency;
 
-
 const THRESHOLD: i32 = 10;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub enum Currency_CODE{
-    USD = 1,
-    EUR = 2,
+    USD,
+    EUR,
+    NONE,
 }
+
+impl Currency_CODE{
+    pub fn to_str(&self) -> String {
+        match self.base_Currency{
+            Currency_CODE::EUR => return "EUR".to_string(),
+            Currency_CODE::USD => return "USD".to_string(),
+            _ => "NONE".to_string()
+        }
+    }
+
+    pub fn from_str(code: &str) -> Currency_CODE{
+        match code{
+            "EUR" => return Currency_CODE::EUR,
+            "USD" => return Currency_CODE::USD,
+            _ => Currency_CODE::NONE
+        }
+    }
+}
+
 
 #[derive(Clone, Debug)]
 pub struct Exchange {
-    exchange_Histories : HashMap<String, Currency::Currency_History>,
+    exchange_Histories : HashMap<String, Currency::Exchange_History>,
     base_Currency: Currency_CODE,
 }
 
 impl Exchange {
-    pub fn new(base_Currency: Currency_CODE) -> Exchange {
+    pub fn new_enum(base_Currency: Currency_CODE) -> Exchange {
         let mut ret = Exchange{
             exchange_Histories: HashMap::new(),
             base_Currency
@@ -53,7 +75,7 @@ impl Exchange {
             let is_in = self.exchange_Histories.contains_key(target_cur);
 
             if !is_in{
-                let mut tmp_history = Currency_History::new();
+                let mut tmp_history = Exchange_History::new();
                 tmp_history.base_CURRENCY = self.convertEnum2_Code();
                 tmp_history.target_CURRENCY = target_cur.clone();
                 tmp_history.first_date = Option::from(item.TIME_PERIOD);
@@ -64,8 +86,11 @@ impl Exchange {
                 tmp_history.exchange_entrys.push(item.clone());
             }
         }
-
         Ok(-1)
+    }
+
+    fn get_ExchangeRate(&mut self, target_Currency: Currency_CODE, date: NaiveDate){
+        let mut exchangeHistory = self.exchange_Histories.get_mut(&target_Currency.to_str()).unwrap();
 
     }
 

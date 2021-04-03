@@ -20,7 +20,7 @@ pub enum Currency_CODE{
 
 impl Currency_CODE{
     pub fn to_str(&self) -> String {
-        match self.base_Currency{
+        match self{
             Currency_CODE::EUR => return "EUR".to_string(),
             Currency_CODE::USD => return "USD".to_string(),
             _ => "NONE".to_string()
@@ -90,35 +90,46 @@ impl Exchange {
         Ok(-1)
     }
 
-    pub fn get_ExchangeRate(&mut self, target_Currency: Currency_CODE, date: NaiveDate){
-        let mut exchangeHistory = self.exchange_Histories.get_mut(&target_Currency.to_str()).unwrap();
-
+    pub fn get_ExchangeRate(self, target_Currency: Currency_CODE, date: NaiveDate) -> Currency_History_Entry {
+        let exchangeHistory:&Exchange_History = self.exchange_Histories.get(&target_Currency.to_str()).unwrap();
+        return self.search_exchangeRate(&exchangeHistory.exchange_entrys, date);
     }
 
-    pub fn search_exchangeRate(a: Vec<Currency_History_Entry>, search_target: &NaiveDate) -> Currency_History_Entry {
+    fn search_exchangeRate(self, a: &Vec<Currency_History_Entry>, search_target: NaiveDate) -> Currency_History_Entry {
         let mut low: i64 = 0;
         let mut high: i64 = a.len() as i64;
+        let mut mid = ((high - low) / 2) + low;
 
         while low <= high {
-            let mid = ((high - low) / 2) + low;
+            mid = ((high - low) / 2) + low;
             let mid_index = mid as usize;
-            let val:Currency_History_Entry = a.get(mid_index);
+            let val: &Currency_History_Entry = a.get(mid_index).unwrap();
 
-            if val.TIME_PERIOD == target_value {
-                return Some(mid_index);
+            if val.TIME_PERIOD == search_target {
+                return a.get(mid_index).unwrap().clone();
             }
 
             // Search values that are greater than val - to right of current mid_index
-            if val < target_value {
+            if val.TIME_PERIOD < search_target {
                 low = mid + 1;
             }
 
             // Search values that are less than val - to the left of current mid_index
-            if val > target_value {
+            if val.TIME_PERIOD > search_target {
                 high = mid - 1;
             }
         }
-        None
+        mid = mid-1;
+
+        loop {
+            let mid_index = mid as usize;
+            let val: &Currency_History_Entry = a.get(mid_index).unwrap();
+            if val.TIME_PERIOD < search_target {
+                return a.get(mid_index).unwrap().clone();
+            }else {
+                mid = mid + 1;
+            }
+        }
     }
 
     fn convertEnum2_Code(&self) -> String {

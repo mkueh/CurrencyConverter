@@ -5,6 +5,7 @@ use reqwest::Response;
 
 use Currency::Exchange_History;
 use chrono::NaiveDate;
+use crate::Currency_Exchange::Currency::Currency_History_Entry;
 
 mod Currency;
 
@@ -89,9 +90,35 @@ impl Exchange {
         Ok(-1)
     }
 
-    fn get_ExchangeRate(&mut self, target_Currency: Currency_CODE, date: NaiveDate){
+    pub fn get_ExchangeRate(&mut self, target_Currency: Currency_CODE, date: NaiveDate){
         let mut exchangeHistory = self.exchange_Histories.get_mut(&target_Currency.to_str()).unwrap();
 
+    }
+
+    pub fn search_exchangeRate(a: Vec<Currency_History_Entry>, search_target: &NaiveDate) -> Currency_History_Entry {
+        let mut low: i64 = 0;
+        let mut high: i64 = a.len() as i64;
+
+        while low <= high {
+            let mid = ((high - low) / 2) + low;
+            let mid_index = mid as usize;
+            let val:Currency_History_Entry = a.get(mid_index);
+
+            if val.TIME_PERIOD == target_value {
+                return Some(mid_index);
+            }
+
+            // Search values that are greater than val - to right of current mid_index
+            if val < target_value {
+                low = mid + 1;
+            }
+
+            // Search values that are less than val - to the left of current mid_index
+            if val > target_value {
+                high = mid - 1;
+            }
+        }
+        None
     }
 
     fn convertEnum2_Code(&self) -> String {

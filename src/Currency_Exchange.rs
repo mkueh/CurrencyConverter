@@ -2,13 +2,11 @@ use std::collections::HashMap;
 use std::ops::Index;
 use reqwest::Response;
 use Currency::Exchange_History;
-use chrono::NaiveDate;
-use crate::Currency_Exchange::Currency::Currency_History_Entry;
 
 mod Currency;
 
 #[derive(Debug, Clone)]
-pub enum Currency_CODE{
+pub enum Currency_CODE {
     USD,
     EUR,
     JPY,
@@ -45,9 +43,9 @@ pub enum Currency_CODE{
     NONE,
 }
 
-impl Currency_CODE{
+impl Currency_CODE {
     pub fn to_str(&self) -> String {
-        match self{
+        match self {
             Currency_CODE::EUR => return "EUR".to_string(),
             Currency_CODE::USD => return "USD".to_string(),
             Currency_CODE::AUD => return "JPY".to_string(),
@@ -84,8 +82,8 @@ impl Currency_CODE{
         }
     }
 
-    pub fn from_str(code: &str) -> Currency_CODE{
-        match code{
+    pub fn from_str(code: &str) -> Currency_CODE {
+        match code {
             "EUR" => return Currency_CODE::EUR,
             "USD" => return Currency_CODE::USD,
             "JPY" => return Currency_CODE::JPY,
@@ -123,18 +121,17 @@ impl Currency_CODE{
     }
 }
 
-
 #[derive(Clone, Debug)]
 pub struct Exchange {
-    exchange_Histories : HashMap<String, Currency::Exchange_History>,
+    exchange_Histories: HashMap<String, Currency::Exchange_History>,
     base_Currency: Currency_CODE,
 }
 
 impl Exchange {
     pub fn new_enum(base_Currency: Currency_CODE) -> Exchange {
-        let mut ret = Exchange{
+        let mut ret = Exchange {
             exchange_Histories: HashMap::new(),
-            base_Currency
+            base_Currency,
         };
         return ret;
     }
@@ -143,33 +140,36 @@ impl Exchange {
         self.load_history();
     }
 
-    fn load_history(&mut self) -> Result<i32, reqwest::Error>{
+    fn load_history(&mut self) -> Result<i32, reqwest::Error> {
         let client = reqwest::blocking::Client::new();
-        let package = client.get(self.convertEnum2_Code()).header("Accept","text/csv");
+        let package = client
+            .get(self.convertEnum2_Code())
+            .header("Accept", "text/csv");
         let respons_ret = package.send()?;
         let respons_unwrap = respons_ret.text().unwrap();
 
         let mut rdr = csv::Reader::from_reader(respons_unwrap.as_bytes());
         let mut deserial_result = rdr.deserialize();
 
-        let mut tmp_Entry_list:Vec<Currency::Currency_History_Entry> = Vec::new();
-        for (i,result) in deserial_result.enumerate() {
-            let record:Currency::Currency_History_Entry = result.unwrap();
+        let mut tmp_Entry_list: Vec<Currency::Currency_History_Entry> = Vec::new();
+        for (i, result) in deserial_result.enumerate() {
+            let record: Currency::Currency_History_Entry = result.unwrap();
             tmp_Entry_list.push(record);
         }
 
-        for item in tmp_Entry_list.iter_mut(){
+        for item in tmp_Entry_list.iter_mut() {
             let target_cur = &item.CURRENCY_TARGET;
             let is_in = self.exchange_Histories.contains_key(target_cur);
 
-            if !is_in{
+            if !is_in {
                 let mut tmp_history = Exchange_History::new();
                 tmp_history.base_CURRENCY = self.convertEnum2_Code();
                 tmp_history.target_CURRENCY = target_cur.clone();
                 tmp_history.first_date = Option::from(item.TIME_PERIOD);
-                let _ = self.exchange_Histories.insert(target_cur.clone(), tmp_history);
-
-            }else{
+                let _ = self
+                    .exchange_Histories
+                    .insert(target_cur.clone(), tmp_history);
+            } else {
                 let mut tmp_history = self.exchange_Histories.get_mut(target_cur).unwrap();
                 tmp_history.exchange_entrys.push(item.clone());
             }
@@ -209,14 +209,14 @@ impl Exchange {
                 high = mid - 1;
             }
         }
-        mid = mid-1;
+        mid = mid - 1;
 
         loop {
             let mid_index = mid as usize;
             let val: &Currency_History_Entry = a.get(mid_index).unwrap();
             if val.TIME_PERIOD < search_target {
                 return a.get(mid_index).unwrap().clone();
-            }else {
+            } else {
                 mid = mid + 1;
             }
         }

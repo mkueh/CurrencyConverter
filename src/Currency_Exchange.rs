@@ -1,14 +1,20 @@
 use std::collections::HashMap;
 use std::ops::Index;
 use reqwest::Response;
+use chrono::NaiveDate;
 use Currency::Exchange_History;
+use Currency::Currency_History_Entry;
+use Error::CurrencyCodeNotFound;
+use Error::DateIsOutOfRange;
+use futures::future::err;
 
 mod Currency;
+mod Error;
 
 #[derive(Debug, Clone)]
 pub enum Currency_CODE {
-    USD,
     EUR,
+    USD,
     JPY,
     BGN,
     CZK,
@@ -31,7 +37,6 @@ pub enum Currency_CODE {
     HKD,
     IDR,
     ILS,
-    INR,
     KRW,
     MXN,
     MYR,
@@ -40,83 +45,82 @@ pub enum Currency_CODE {
     SGD,
     THB,
     ZAR,
-    NONE,
 }
 
 impl Currency_CODE {
-    pub fn to_str(&self) -> String {
+    pub fn to_str(&self) -> Result<String, CurrencyCodeNotFound> {
         match self {
-            Currency_CODE::EUR => return "EUR".to_string(),
-            Currency_CODE::USD => return "USD".to_string(),
-            Currency_CODE::AUD => return "JPY".to_string(),
-            Currency_CODE::EUR => return "BGN".to_string(),
-            Currency_CODE::USD => return "CZK".to_string(),
-            Currency_CODE::AUD => return "DKK".to_string(),
-            Currency_CODE::EUR => return "GBP".to_string(),
-            Currency_CODE::USD => return "HUF".to_string(),
-            Currency_CODE::AUD => return "PLN".to_string(),
-            Currency_CODE::EUR => return "RON".to_string(),
-            Currency_CODE::USD => return "SEK".to_string(),
-            Currency_CODE::AUD => return "CHF".to_string(),
-            Currency_CODE::EUR => return "ISK".to_string(),
-            Currency_CODE::USD => return "NOK".to_string(),
-            Currency_CODE::AUD => return "HRK".to_string(),
-            Currency_CODE::EUR => return "RUB".to_string(),
-            Currency_CODE::USD => return "TRY".to_string(),
-            Currency_CODE::AUD => return "AUD".to_string(),
-            Currency_CODE::EUR => return "BRL".to_string(),
-            Currency_CODE::USD => return "CAD".to_string(),
-            Currency_CODE::AUD => return "CNY".to_string(),
-            Currency_CODE::EUR => return "HKD".to_string(),
-            Currency_CODE::USD => return "IDR".to_string(),
-            Currency_CODE::AUD => return "ILS".to_string(),
-            Currency_CODE::EUR => return "KRW".to_string(),
-            Currency_CODE::USD => return "MXN".to_string(),
-            Currency_CODE::AUD => return "MYR".to_string(),
-            Currency_CODE::EUR => return "NZD".to_string(),
-            Currency_CODE::USD => return "PHP".to_string(),
-            Currency_CODE::AUD => return "SGD".to_string(),
-            Currency_CODE::USD => return "THB".to_string(),
-            Currency_CODE::AUD => return "ZAR".to_string(),
-            _ => "NONE".to_string()
+            Currency_CODE::EUR => return Ok("EUR".to_string()),
+            Currency_CODE::USD => return Ok("USD".to_string()),
+            Currency_CODE::JPY => return Ok("JPY".to_string()),
+            Currency_CODE::BGN => return Ok("BGN".to_string()),
+            Currency_CODE::CZK => return Ok("CZK".to_string()),
+            Currency_CODE::DKK => return Ok("DKK".to_string()),
+            Currency_CODE::GBP => return Ok("GBP".to_string()),
+            Currency_CODE::HUF => return Ok("HUF".to_string()),
+            Currency_CODE::PLN => return Ok("PLN".to_string()),
+            Currency_CODE::RON => return Ok("RON".to_string()),
+            Currency_CODE::SEK => return Ok("SEK".to_string()),
+            Currency_CODE::CHF => return Ok("CHF".to_string()),
+            Currency_CODE::ISK => return Ok("ISK".to_string()),
+            Currency_CODE::NOK => return Ok("NOK".to_string()),
+            Currency_CODE::HRK => return Ok("HRK".to_string()),
+            Currency_CODE::RUB => return Ok("RUB".to_string()),
+            Currency_CODE::TRY => return Ok("TRY".to_string()),
+            Currency_CODE::AUD => return Ok("AUD".to_string()),
+            Currency_CODE::BRL => return Ok("BRL".to_string()),
+            Currency_CODE::CAD => return Ok("CAD".to_string()),
+            Currency_CODE::CNY => return Ok("CNY".to_string()),
+            Currency_CODE::HKD => return Ok("HKD".to_string()),
+            Currency_CODE::IDR => return Ok("IDR".to_string()),
+            Currency_CODE::ILS => return Ok("ILS".to_string()),
+            Currency_CODE::KRW => return Ok("KRW".to_string()),
+            Currency_CODE::MXN => return Ok("MXN".to_string()),
+            Currency_CODE::MYR => return Ok("MYR".to_string()),
+            Currency_CODE::NZD => return Ok("NZD".to_string()),
+            Currency_CODE::PHP => return Ok("PHP".to_string()),
+            Currency_CODE::SGD => return Ok("SGD".to_string()),
+            Currency_CODE::THB => return Ok("THB".to_string()),
+            Currency_CODE::ZAR => return Ok("ZAR".to_string()),
+            _ => Err(CurrencyCodeNotFound)
         }
     }
 
-    pub fn from_str(code: &str) -> Currency_CODE {
+    pub fn from_str(code: &str) -> Result<Currency_CODE, CurrencyCodeNotFound> {
         match code {
-            "EUR" => return Currency_CODE::EUR,
-            "USD" => return Currency_CODE::USD,
-            "JPY" => return Currency_CODE::JPY,
-            "BGN" => return Currency_CODE::BGN,
-            "CZK" => return Currency_CODE::CZK,
-            "DKK" => return Currency_CODE::DKK,
-            "GBP" => return Currency_CODE::GBP,
-            "HUF" => return Currency_CODE::HUF,
-            "PLN" => return Currency_CODE::PLN,
-            "RON" => return Currency_CODE::RON,
-            "SEK" => return Currency_CODE::SEK,
-            "CHF" => return Currency_CODE::CHF,
-            "ISK" => return Currency_CODE::ISK,
-            "NOK" => return Currency_CODE::NOK,
-            "HRK" => return Currency_CODE::HRK,
-            "RUB" => return Currency_CODE::RUB,
-            "TRY" => return Currency_CODE::TRY,
-            "AUD" => return Currency_CODE::AUD,
-            "BRL" => return Currency_CODE::BRL,
-            "CAD" => return Currency_CODE::CAD,
-            "CNY" => return Currency_CODE::CNY,
-            "HKD" => return Currency_CODE::HKD,
-            "IDR" => return Currency_CODE::IDR,
-            "ILS" => return Currency_CODE::ILS,
-            "KRW" => return Currency_CODE::KRW,
-            "MXN" => return Currency_CODE::MXN,
-            "MYR" => return Currency_CODE::MYR,
-            "NZD" => return Currency_CODE::NZD,
-            "PHP" => return Currency_CODE::PHP,
-            "SGD" => return Currency_CODE::SGD,
-            "THB" => return Currency_CODE::THB,
-            "ZAR" => return Currency_CODE::ZAR,
-            _ => Currency_CODE::NONE
+            "EUR" => return Ok(Currency_CODE::EUR),
+            "USD" => return Ok(Currency_CODE::USD),
+            "JPY" => return Ok(Currency_CODE::JPY),
+            "BGN" => return Ok(Currency_CODE::BGN),
+            "CZK" => return Ok(Currency_CODE::CZK),
+            "DKK" => return Ok(Currency_CODE::DKK),
+            "GBP" => return Ok(Currency_CODE::GBP),
+            "HUF" => return Ok(Currency_CODE::HUF),
+            "PLN" => return Ok(Currency_CODE::PLN),
+            "RON" => return Ok(Currency_CODE::RON),
+            "SEK" => return Ok(Currency_CODE::SEK),
+            "CHF" => return Ok(Currency_CODE::CHF),
+            "ISK" => return Ok(Currency_CODE::ISK),
+            "NOK" => return Ok(Currency_CODE::NOK),
+            "HRK" => return Ok(Currency_CODE::HRK),
+            "RUB" => return Ok(Currency_CODE::RUB),
+            "TRY" => return Ok(Currency_CODE::TRY),
+            "AUD" => return Ok(Currency_CODE::AUD),
+            "BRL" => return Ok(Currency_CODE::BRL),
+            "CAD" => return Ok(Currency_CODE::CAD),
+            "CNY" => return Ok(Currency_CODE::CNY),
+            "HKD" => return Ok(Currency_CODE::HKD),
+            "IDR" => return Ok(Currency_CODE::IDR),
+            "ILS" => return Ok(Currency_CODE::ILS),
+            "KRW" => return Ok(Currency_CODE::KRW),
+            "MXN" => return Ok(Currency_CODE::MXN),
+            "MYR" => return Ok(Currency_CODE::MYR),
+            "NZD" => return Ok(Currency_CODE::NZD),
+            "PHP" => return Ok(Currency_CODE::PHP),
+            "SGD" => return Ok(Currency_CODE::SGD),
+            "THB" => return Ok(Currency_CODE::THB),
+            "ZAR" => return Ok(Currency_CODE::ZAR),
+            _ => Err(CurrencyCodeNotFound)
         }
     }
 }
@@ -140,12 +144,12 @@ impl Exchange {
         self.load_history();
     }
 
-    fn load_history(&mut self) -> Result<i32, reqwest::Error> {
+    fn load_history(&mut self){
         let client = reqwest::blocking::Client::new();
         let package = client
             .get(self.convertEnum2_Code())
             .header("Accept", "text/csv");
-        let respons_ret = package.send()?;
+        let respons_ret = package.send().unwrap();
         let respons_unwrap = respons_ret.text().unwrap();
 
         let mut rdr = csv::Reader::from_reader(respons_unwrap.as_bytes());
@@ -174,18 +178,24 @@ impl Exchange {
                 tmp_history.exchange_entrys.push(item.clone());
             }
         }
-        Ok(-1)
     }
 
-    pub fn get_ExchangeRate(&self, target_Currency: Currency_CODE, date: NaiveDate) -> Currency_History_Entry {
-        let exchangeHistory: &Exchange_History = self.exchange_Histories.get(&target_Currency.to_str()).unwrap();
-
-        
-
+    pub fn get_ExchangeRate(&self, target_Currency: Currency_CODE, date: NaiveDate) -> Result<Currency_History_Entry, DateIsOutOfRange> {
+        let target_str = &target_Currency.to_str().unwrap();
+        let exchangeHistory= self.exchange_Histories.get(target_str).unwrap();
         return self.search_exchangeRate(&exchangeHistory.exchange_entrys, date);
     }
 
-    fn search_exchangeRate(&self, a: &Vec<Currency_History_Entry>, search_target: NaiveDate) -> Currency_History_Entry {
+    fn search_exchangeRate(&self, a: &Vec<Currency_History_Entry>, search_target: NaiveDate) -> Result<Currency_History_Entry, DateIsOutOfRange> {
+        //range check
+        let first_date = a.first().unwrap().TIME_PERIOD;
+        let last_date = a.last().unwrap().TIME_PERIOD;
+
+        if !(search_target <= first_date && first_date >= last_date){
+            return Err(DateIsOutOfRange);
+        }
+
+
         let mut low: i64 = 0;
         let mut high: i64 = a.len() as i64;
         let mut mid = ((high - low) / 2) + low;
@@ -196,7 +206,7 @@ impl Exchange {
             let val: &Currency_History_Entry = a.get(mid_index).unwrap();
 
             if val.TIME_PERIOD == search_target {
-                return a.get(mid_index).unwrap().clone();
+                return Ok(a.get(mid_index).unwrap().clone());
             }
 
             // Search values that are greater than val - to right of current mid_index
@@ -215,7 +225,7 @@ impl Exchange {
             let mid_index = mid as usize;
             let val: &Currency_History_Entry = a.get(mid_index).unwrap();
             if val.TIME_PERIOD < search_target {
-                return a.get(mid_index).unwrap().clone();
+                return Ok(a.get(mid_index).unwrap().clone());
             } else {
                 mid = mid + 1;
             }

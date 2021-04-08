@@ -16,9 +16,9 @@ fn main() {
     //test();
     //let return_value = hello_world(); // Nothing is printed
     let mut Exchanger = Currency_Exchange::Exchange::new_enum(Currency_Exchange::Currency_CODE::AUD);
-    let date = NaiveDate::from_ymd(2020, 1, 15);
+    let date = NaiveDate::from_ymd(2023, 1, 15);
     Exchanger.init();
-    let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date);
+    let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
 
     println!("{:.64}", rate.OBS_VALUE.unwrap());
 }

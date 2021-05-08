@@ -1,12 +1,9 @@
 use std::collections::HashMap;
-use std::ops::Index;
-use reqwest::Response;
 use chrono::NaiveDate;
 use Currency::Exchange_History;
 use Currency::Currency_History_Entry;
 use Error::CurrencyCodeNotFound;
 use Error::DateIsOutOfRange;
-use futures::future::err;
 
 mod Currency;
 mod Error;
@@ -191,7 +188,7 @@ impl Exchange {
         let first_date = a.first().unwrap().TIME_PERIOD;
         let last_date = a.last().unwrap().TIME_PERIOD;
 
-        if !(search_target <= first_date && first_date >= last_date){
+        if search_target <= first_date && search_target >= last_date{
             return Err(DateIsOutOfRange);
         }
 

@@ -5,10 +5,13 @@ use Currency::Currency_History_Entry;
 use Error::CurrencyCodeNotFound;
 use Error::DateIsOutOfRange;
 
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
+
 mod Currency;
 mod Error;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, EnumIter, Copy)]
 pub enum Currency_CODE {
     EUR,
     USD,
@@ -125,26 +128,33 @@ impl Currency_CODE {
 #[derive(Clone, Debug)]
 pub struct Exchange {
     exchange_Histories: HashMap<String, Currency::Exchange_History>,
-    base_Currency: Currency_CODE,
 }
 
 impl Exchange {
-    pub fn new_enum(base_Currency: Currency_CODE) -> Exchange {
+    pub fn new() -> Exchange {
         let mut ret = Exchange {
-            exchange_Histories: HashMap::new(),
-            base_Currency,
+            exchange_Histories: HashMap::new()
         };
         return ret;
     }
 
     pub fn init(&mut self) {
+
+        for direction in Currency_CODE::iter() {
+            println!("{:?}", direction);
+        }
+
         self.load_history();
     }
 
     fn load_history(&mut self){
+
+    }
+
+    fn load_currency_history(&mut self, target_Currency: Currency_CODE){
         let client = reqwest::blocking::Client::new();
         let package = client
-            .get(self.convertEnum2_Code())
+            .get(self.getEZB_URL(target_Currency))
             .header("Accept", "text/csv");
         let respons_ret = package.send().unwrap();
         let respons_unwrap = respons_ret.text().unwrap();
@@ -164,12 +174,10 @@ impl Exchange {
 
             if !is_in {
                 let mut tmp_history = Exchange_History::new();
-                tmp_history.base_CURRENCY = self.convertEnum2_Code();
+                tmp_history.base_CURRENCY = self.getEZB_URL(target_Currency);
                 tmp_history.target_CURRENCY = target_cur.clone();
                 tmp_history.first_date = Option::from(item.TIME_PERIOD);
-                let _ = self
-                    .exchange_Histories
-                    .insert(target_cur.clone(), tmp_history);
+                let _ = self.exchange_Histories.insert(target_cur.clone(), tmp_history);
             } else {
                 let mut tmp_history = self.exchange_Histories.get_mut(target_cur).unwrap();
                 tmp_history.exchange_entrys.push(item.clone());
@@ -229,9 +237,8 @@ impl Exchange {
         }
     }
 
-    fn convertEnum2_Code(&self) -> String {
-        match self.base_Currency{
-            Currency_CODE::EUR => return "https://sdw-wsrest.ecb.europa.eu/service/data/EXR/D.EUR..SP00.A".to_string(),
+    fn getEZB_URL(&self, target_Currency: Currency_CODE) -> String {
+        match target_Currency{
             Currency_CODE::USD => return "https://sdw-wsrest.ecb.europa.eu/service/data/EXR/D.USD..SP00.A".to_string(),
             Currency_CODE::JPY => return "https://sdw-wsrest.ecb.europa.eu/service/data/EXR/D.JPY..SP00.A".to_string(),
             Currency_CODE::BGN => return "https://sdw-wsrest.ecb.europa.eu/service/data/EXR/D.BGN..SP00.A".to_string(),

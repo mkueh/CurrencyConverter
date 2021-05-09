@@ -8,15 +8,52 @@ mod tests {
     use chrono::NaiveDate;
 
     #[test]
-    fn it_works() {
+    fn USD_EUR_2020_1_15() {
 
-        let mut Exchanger = Currency_Exchange::Exchange::new_enum(Currency_Exchange::Currency_CODE::AUD);
+        let mut Exchanger = Currency_Exchange::Exchange::new();
         let date = NaiveDate::from_ymd(2020, 1, 15);
         Exchanger.init();
         let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 1.1142, 0.00001);
+    }
 
-        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 1.61880, 0.00001);
-        println!("{:.64}", rate.OBS_VALUE.unwrap());
+    #[test]
+    fn JPY_EUR_2020_1_15() {
 
+        let mut Exchanger = Currency_Exchange::Exchange::new();
+        let date = NaiveDate::from_ymd(2020, 1, 15);
+        Exchanger.init();
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 122.43, 0.00001);
+    }
+
+    #[test]
+    fn CAD_EUR_2020_1_15() {
+
+        let mut Exchanger = Currency_Exchange::Exchange::new();
+        let date = NaiveDate::from_ymd(2020, 1, 15);
+        Exchanger.init();
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 1.4565, 0.00001);
+    }
+
+    #[test]
+    fn ZAR_EUR_2020_1_15() {
+
+        let mut Exchanger = Currency_Exchange::Exchange::new();
+        let date = NaiveDate::from_ymd(2020, 1, 15);
+        Exchanger.init();
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 16.0218, 0.00001);
+    }
+
+    #[test]
+    fn EUR_USD_2020_1_15() {
+
+        let mut Exchanger = Currency_Exchange::Exchange::new();
+        let date = NaiveDate::from_ymd(2020, 1, 15);
+        Exchanger.init();
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::USD, date).unwrap();
+        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 0.8868, 0.00001);
     }
 }

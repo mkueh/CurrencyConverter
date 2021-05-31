@@ -6,6 +6,7 @@ mod tests {
     use crate::Currency_Exchange;
     use assert_approx_eq::assert_approx_eq;
     use chrono::NaiveDate;
+    use tokio::task::JoinHandle;
 
     #[test]
     fn USD_EUR_2020_1_15() {
@@ -13,8 +14,8 @@ mod tests {
         let mut Exchanger = Currency_Exchange::Exchange::new();
         let date = NaiveDate::from_ymd(2020, 1, 15);
         Exchanger.init();
-        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
-        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 1.1142, 0.00001);
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::USD,Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate, 1.1142, 0.00001);
     }
 
     #[test]
@@ -23,8 +24,8 @@ mod tests {
         let mut Exchanger = Currency_Exchange::Exchange::new();
         let date = NaiveDate::from_ymd(2020, 1, 15);
         Exchanger.init();
-        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
-        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 122.43, 0.00001);
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::JPY,Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate, 122.43, 0.00001);
     }
 
     #[test]
@@ -33,8 +34,8 @@ mod tests {
         let mut Exchanger = Currency_Exchange::Exchange::new();
         let date = NaiveDate::from_ymd(2020, 1, 15);
         Exchanger.init();
-        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
-        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 1.4565, 0.00001);
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::CAD,Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate, 1.4565, 0.00001);
     }
 
     #[test]
@@ -43,8 +44,8 @@ mod tests {
         let mut Exchanger = Currency_Exchange::Exchange::new();
         let date = NaiveDate::from_ymd(2020, 1, 15);
         Exchanger.init();
-        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, date).unwrap();
-        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 16.0218, 0.00001);
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::ZAR,Currency_Exchange::Currency_CODE::EUR, date).unwrap();
+        assert_approx_eq!(rate, 16.0218, 0.00001);
     }
 
     #[test]
@@ -53,7 +54,17 @@ mod tests {
         let mut Exchanger = Currency_Exchange::Exchange::new();
         let date = NaiveDate::from_ymd(2020, 1, 15);
         Exchanger.init();
-        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::USD, date).unwrap();
-        assert_approx_eq!(rate.OBS_VALUE.unwrap(), 0.8868, 0.00001);
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::EUR, Currency_Exchange::Currency_CODE::USD, date).unwrap();
+        assert_approx_eq!(rate, 0.89750, 0.00001);
+    }
+
+    #[test]
+    fn JPY_USD_2020_1_15() {
+
+        let mut Exchanger = Currency_Exchange::Exchange::new();
+        let date = NaiveDate::from_ymd(2020, 1, 15);
+        Exchanger.init();
+        let rate = Exchanger.get_ExchangeRate(Currency_Exchange::Currency_CODE::JPY, Currency_Exchange::Currency_CODE::USD, date).unwrap();
+        assert_approx_eq!(rate, 109.90374, 0.03);
     }
 }

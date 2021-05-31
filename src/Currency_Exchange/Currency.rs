@@ -46,12 +46,11 @@ impl Exchange_History {
         return ret;
     }
 
-    pub fn init(&mut self, ezb_response:String){
-        self.base_CURRENCY = self.exchange_entrys[0].CURRENCY.clone();
-        self.target_CURRENCY = self.exchange_entrys[0].CURRENCY_TARGET.clone();
-        self.first_date = Option::from(self.exchange_entrys[0].TIME_PERIOD.clone());
-        self.end_date = Option::from(self.exchange_entrys[self.exchange_entrys.len() - 1].TIME_PERIOD.clone());
-
+    pub fn init(&mut self){
+            self.base_CURRENCY = self.exchange_entrys[0].CURRENCY.clone();
+            self.target_CURRENCY = self.exchange_entrys[0].CURRENCY_TARGET.clone();
+            self.first_date = Option::from(self.exchange_entrys[0].TIME_PERIOD.clone());
+            self.end_date = Option::from(self.exchange_entrys[self.exchange_entrys.len() - 1].TIME_PERIOD.clone());
         }
 }
 

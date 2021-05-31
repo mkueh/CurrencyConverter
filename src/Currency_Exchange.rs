@@ -4,14 +4,17 @@ use Currency::Exchange_History;
 use Currency::Currency_History_Entry;
 use Error::CurrencyCodeNotFound;
 use Error::DateIsOutOfRange;
+use std::thread;
 
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
+use std::thread::JoinHandle;
+use std::borrow::Borrow;
 
 mod Currency;
 mod Error;
 
-#[derive(Debug, Clone, EnumIter, Copy)]
+#[derive(Debug, Clone, EnumIter, Copy, PartialEq)]
 pub enum Currency_CODE {
     EUR,
     USD,
@@ -139,56 +142,89 @@ impl Exchange {
     }
 
     pub fn init(&mut self) {
-
-        for direction in Currency_CODE::iter() {
-            println!("{:?}", direction);
-        }
-
         self.load_history();
     }
 
     fn load_history(&mut self){
+        //create internal datastructor
+        //create function to transfer pairs
+        let mut history_vec: Vec<Exchange_History> = Vec::new();
+        let mut jobs:Vec<std::thread::JoinHandle<Exchange_History>> = Vec::new();
 
-    }
-
-    fn load_currency_history(&mut self, target_Currency: Currency_CODE){
-        let client = reqwest::blocking::Client::new();
-        let package = client
-            .get(self.getEZB_URL(target_Currency))
-            .header("Accept", "text/csv");
-        let respons_ret = package.send().unwrap();
-        let respons_unwrap = respons_ret.text().unwrap();
-
-        let mut rdr = csv::Reader::from_reader(respons_unwrap.as_bytes());
-        let mut deserial_result = rdr.deserialize();
-
-        let mut tmp_Entry_list: Vec<Currency::Currency_History_Entry> = Vec::new();
-        for (i, result) in deserial_result.enumerate() {
-            let record: Currency::Currency_History_Entry = result.unwrap();
-            tmp_Entry_list.push(record);
-        }
-
-        for item in tmp_Entry_list.iter_mut() {
-            let target_cur = &item.CURRENCY_TARGET;
-            let is_in = self.exchange_Histories.contains_key(target_cur);
-
-            if !is_in {
-                let mut tmp_history = Exchange_History::new();
-                tmp_history.base_CURRENCY = self.getEZB_URL(target_Currency);
-                tmp_history.target_CURRENCY = target_cur.clone();
-                tmp_history.first_date = Option::from(item.TIME_PERIOD);
-                let _ = self.exchange_Histories.insert(target_cur.clone(), tmp_history);
-            } else {
-                let mut tmp_history = self.exchange_Histories.get_mut(target_cur).unwrap();
-                tmp_history.exchange_entrys.push(item.clone());
+        for c_codes in Currency_CODE::iter() {
+            if !(c_codes == Currency_CODE::EUR){
+                jobs.push(Exchange::load_currency_history(c_codes))
             }
         }
+
+        for job in jobs{
+            let job_history: Currency::Exchange_History = job.join().unwrap();
+            self.exchange_Histories.insert(job_history.base_CURRENCY.clone().to_string(), job_history.clone());
+        }
     }
 
-    pub fn get_ExchangeRate(&self, target_Currency: Currency_CODE, date: NaiveDate) -> Result<Currency_History_Entry, DateIsOutOfRange> {
-        let target_str = &target_Currency.to_str().unwrap();
-        let exchangeHistory= self.exchange_Histories.get(target_str).unwrap();
-        return self.search_exchangeRate(&exchangeHistory.exchange_entrys, date);
+    fn load_currency_history(target_Currency: Currency_CODE) -> JoinHandle<Exchange_History> {
+        let handle = std::thread::spawn(move || {
+            let client = reqwest::blocking::Client::new();
+            let package = client
+                .get(Exchange::getEZB_URL(target_Currency))
+                .header("Accept", "text/csv");
+            let respons_ret = package.send().unwrap();
+            let respons_unwrap = respons_ret.text().unwrap();
+
+            let mut rdr = csv::Reader::from_reader(respons_unwrap.as_bytes());
+            let mut deserial_result = rdr.deserialize();
+
+            let mut tmp_Entry_list: Vec<Currency::Currency_History_Entry> = Vec::new();
+            for (i, result) in deserial_result.enumerate() {
+                let record: Currency::Currency_History_Entry = result.unwrap();
+                tmp_Entry_list.push(record);
+            }
+
+            let mut tmp_history = Exchange_History::new();
+
+            for item in tmp_Entry_list.iter_mut() {
+                tmp_history.exchange_entrys.push(item.clone());
+            }
+
+            tmp_history.init();
+
+            return tmp_history;
+        });
+        return handle;
+    }
+
+    pub fn get_ExchangeRate(&self, base_Currency: Currency_CODE, target_Currency: Currency_CODE, date: NaiveDate) -> Result<f64, CurrencyCodeNotFound> {
+        if target_Currency == base_Currency{
+            return Ok(1.0);
+        }
+
+        if target_Currency == Currency_CODE::EUR{
+            let base_Currency_str = &base_Currency.to_str().unwrap();
+            let exchangeHistory= self.exchange_Histories.get(base_Currency_str).unwrap();
+            return Ok(self.search_exchangeRate(&exchangeHistory.exchange_entrys, date).unwrap().OBS_VALUE.unwrap());
+        } else if !(base_Currency == Currency_CODE::EUR){
+
+            let base_Currency_str = &base_Currency.to_str().unwrap();
+            let exchangeHistory_inEUR= self.exchange_Histories.get(base_Currency_str).unwrap();
+            let exchange_rate_BaseToEUR = self.search_exchangeRate(&exchangeHistory_inEUR.exchange_entrys, date).unwrap().OBS_VALUE.unwrap();
+
+            let target_Currency_str = &target_Currency.to_str().unwrap();
+            let exchangeHistory_EURtoTarget= self.exchange_Histories.get(target_Currency_str).unwrap();
+            let exchange_rate_EURtoTarget = 1.0/self.search_exchangeRate(&exchangeHistory_EURtoTarget.exchange_entrys, date).unwrap().OBS_VALUE.unwrap();
+
+            println!("{}",exchange_rate_EURtoTarget);
+            return Ok(exchange_rate_BaseToEUR * exchange_rate_EURtoTarget);
+
+
+        }else if base_Currency == Currency_CODE::EUR {
+            let target_Currency_str = &target_Currency.to_str().unwrap();
+            let exchangeHistory= self.exchange_Histories.get(target_Currency_str).unwrap();
+            let value = self.search_exchangeRate(&exchangeHistory.exchange_entrys, date).unwrap().OBS_VALUE.unwrap();
+            return Ok(1.0 / value);
+        }
+
+        return Err(CurrencyCodeNotFound);
     }
 
     fn search_exchangeRate(&self, a: &Vec<Currency_History_Entry>, search_target: NaiveDate) -> Result<Currency_History_Entry, DateIsOutOfRange> {
@@ -237,7 +273,7 @@ impl Exchange {
         }
     }
 
-    fn getEZB_URL(&self, target_Currency: Currency_CODE) -> String {
+    fn getEZB_URL(target_Currency: Currency_CODE) -> String {
         match target_Currency{
             Currency_CODE::USD => return "https://sdw-wsrest.ecb.europa.eu/service/data/EXR/D.USD..SP00.A".to_string(),
             Currency_CODE::JPY => return "https://sdw-wsrest.ecb.europa.eu/service/data/EXR/D.JPY..SP00.A".to_string(),
